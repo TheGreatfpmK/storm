@@ -241,6 +241,18 @@ namespace storm {
             init_flags.set(this->initial_state);
             labeling.addLabel("init", std::move(init_flags));
 
+            int s_state = 0;
+            for (auto i: this->storm_to_madp_states) {
+                const std::string pomdp_state = std::to_string(i.first);
+                bool contains_label = labeling.getLabels().count(pomdp_state);
+                if (!contains_label) {
+                    labeling.addLabel(pomdp_state);
+                }
+                labeling.addLabelToState(pomdp_state, s_state);
+
+                s_state++;
+            }
+
             if(this->discounted) {
                 storm::storage::BitVector discount_sink_flags(this->num_states(), false);
                 discount_sink_flags.set(this->discount_sink_state);
