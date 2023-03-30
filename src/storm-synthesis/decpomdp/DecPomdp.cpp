@@ -397,7 +397,7 @@ namespace storm {
                 return model;
             }
 
-            STORM_PRINT_AND_LOG("MADP: parsing success\n");
+            STORM_PRINT_AND_LOG("MADP: POMDP parsing failure\n");
             STORM_PRINT_AND_LOG("MADP: trying to parse as dec-POMDP...\n");
             model = parse_as_decpomdp(filename);
             if(model != NULL) {

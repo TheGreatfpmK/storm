@@ -562,10 +562,16 @@ void ParserPOMDPFormat_Spirit::ProcessTProb::operator()(iterator_t str, iterator
         sucSI != _m_po->_m_anyStateIndex &&
         _m_po->_m_lp_JAI.size() != 1 )
     {
-        jaI = _m_po->_m_lp_JAI[0];
-        _m_po->GetPOMDPDiscrete()->SetTransitionProbability(sI, jaI, sucSI, prob);
-        if(DEBUG_POMDP_PARSE)
-            cout << "Setting T("<<sI<<","<<jaI<<","<<sucSI<<") = " <<prob<<endl;
+        //jaI = _m_po->_m_lp_JAI[0];
+        vector<Index>::iterator jaI_it = _m_po->_m_lp_JAI.begin();
+        vector<Index>::iterator jaI_last = _m_po->_m_lp_JAI.end();
+        while(jaI_it != jaI_last) {
+            jaI = *jaI_it;
+            _m_po->GetPOMDPDiscrete()->SetTransitionProbability(sI, jaI, sucSI, prob);
+            if(DEBUG_POMDP_PARSE)
+                cout << "Setting T("<<sI<<","<<jaI<<","<<sucSI<<") = " <<prob<<endl;
+            jaI_it++;
+        }
         return;
     }
     //one or more wildcards: complex situation
@@ -595,7 +601,7 @@ void ParserPOMDPFormat_Spirit::ProcessTProb::operator()(iterator_t str, iterator
             vector<Index>::iterator sucSI_last = _m_po->_m_lp_toSI.end();
             while(sucSI_it != sucSI_last)
             {
-                sucSI = *sucSI_it; 
+                sucSI = *sucSI_it;
                 _m_po->GetPOMDPDiscrete()->SetTransitionProbability(sI, jaI, sucSI, 
                         prob);
                 if(DEBUG_POMDP_PARSE)
