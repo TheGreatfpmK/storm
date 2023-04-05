@@ -249,6 +249,17 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefTypeStd const BeliefManager<PomdpType, BeliefValueType, StateType>::getBeliefStd(BeliefId const &id) const {
+            STORM_LOG_ASSERT(id != noId(), "Tried to get a non-existent belief.");
+            STORM_LOG_ASSERT(id < getNumberOfBeliefIds(), "Belief index " << id << " is out of range.");
+            BeliefTypeStd result;
+            for( auto const &row : beliefs[id] ) {
+                result[row.first] = row.second;
+            }
+            return result;
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId BeliefManager<PomdpType, BeliefValueType, StateType>::getId(BeliefType const &belief) const {
             uint32_t obs = getBeliefObservation(belief);
             STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");

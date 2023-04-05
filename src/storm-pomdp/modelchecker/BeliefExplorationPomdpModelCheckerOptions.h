@@ -61,6 +61,7 @@ namespace storm {
 
                 storm::solver::MinMaxMethod preProcMinMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration;
 
+                bool alphaVectorTest = false;
             };
         }
     }

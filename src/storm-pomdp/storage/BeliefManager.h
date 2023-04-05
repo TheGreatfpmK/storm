@@ -20,6 +20,7 @@ namespace storm {
         public:
             typedef typename PomdpType::ValueType ValueType;
             typedef boost::container::flat_map<StateType, BeliefValueType> BeliefType; // iterating over this shall be ordered (for correct hash computation)
+            typedef std::map<StateType, BeliefValueType> BeliefTypeStd;
             typedef boost::container::flat_set<StateType> BeliefSupportType;
             typedef uint64_t BeliefId;
 
@@ -101,6 +102,8 @@ namespace storm {
             BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite);
 
             std::string getObservationLabel(BeliefId const & beliefId);
+
+            BeliefTypeStd const getBeliefStd(BeliefId const &id) const;
 
         private:
 

@@ -64,6 +64,8 @@ namespace storm {
 
                 void unfoldInteractively(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const & valueBounds, Result &result);
 
+                void unfoldTest(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const & valueBounds, Result &result);
+
                 void pauseUnfolding();
 
                 void continueUnfolding();
