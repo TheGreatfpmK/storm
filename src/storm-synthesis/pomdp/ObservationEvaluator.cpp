@@ -72,9 +72,6 @@ namespace storm {
                     this->num_obs_ids++;
                 }
             }
-
-            //
-            std::cout << "\n done\n" << std::endl;
         }
 
         template<typename ValueType>
