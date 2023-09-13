@@ -2,7 +2,7 @@
 
 #include "storm/storage/prism/Program.h"
 #include "storm/models/sparse/Model.h"
-
+#include "storm/models/sparse/Pomdp.h"
 
 namespace storm {
     namespace synthesis {
@@ -24,20 +24,33 @@ namespace storm {
             /** For each observation expression whether it is boolean. */
             std::vector<bool> obs_expr_is_boolean;
             
-            /** Number of observation ids. */
-            uint32_t num_obs_ids = 0;
-            /** For each state its observation id. */
-            std::vector<uint32_t> state_to_obs_id;
+            /** Number of observation classes. */
+            uint32_t num_obs_classes = 0;
+            /** For each state its observation class. */
+            std::vector<uint32_t> state_to_obs_class;
 
-            uint64_t observationIdValue(uint32_t obs_id, uint32_t obs_expr);
+            /** Get the value of the observation expression in the given observation class. */
+            uint64_t observationClassValue(uint32_t obs_class, uint32_t obs_expr);
+
+            /**
+             * Create a sub-POMDP from the given sub-MDP by associating its states with observations.
+             * @param mdp a sub-MDP
+             * @param state_sub_to_full for each state of the sub-MDP the index of the original state
+             */
+            std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> buildSubPomdp(
+                storm::models::sparse::Mdp<ValueType> const& sub_mdp,
+                std::vector<uint32_t> state_sub_to_full
+            );
+
+            // TODO observation valuations
 
         private:
             /** Bitwidth of observation expression value size. */
             static const int OBS_EXPR_VALUE_SIZE = 64;
-            /** Mapping of observation expressions evaluation to a unique observation id. */
-            std::map<storm::storage::BitVector,uint32_t> obs_evaluation_to_id;
-            /** Mapping of observation id to observation expressions evaluation. */
-            std::vector<storm::storage::BitVector> id_to_obs_evaluation;
+            /** Mapping of observation expressions evaluation to a unique observation class. */
+            std::map<storm::storage::BitVector,uint32_t> obs_evaluation_to_class;
+            /** Mapping of observation class to observation expressions evaluation. */
+            std::vector<storm::storage::BitVector> obs_class_to_evaluation;
             
         };
 

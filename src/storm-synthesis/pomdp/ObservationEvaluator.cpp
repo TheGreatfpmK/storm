@@ -1,6 +1,7 @@
 #include "storm-synthesis/pomdp/ObservationEvaluator.h"
 
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/InvalidModelException.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 
 #include <map>
@@ -34,10 +35,10 @@ namespace storm {
             // evaluate observation expression for each state valuation
             storm::expressions::ExpressionEvaluator<double> evaluator(prism.getManager());
             auto const& state_valuations = model.getStateValuations();
-            // associate each evaluation with the unique observation id
-            this->state_to_obs_id.resize(model.getNumberOfStates());
-            this->num_obs_ids = 0;
-            for(uint_fast64_t state = 0; state < model.getNumberOfStates(); state++) {
+            // associate each evaluation with the unique observation class
+            this->state_to_obs_class.resize(model.getNumberOfStates());
+            this->num_obs_classes = 0;
+            for(uint32_t state = 0; state < model.getNumberOfStates(); state++) {
 
                 // collect state valuation into evaluator
                 for(auto it = state_valuations.at(state).begin(); it != state_valuations.at(state).end(); ++it) {
@@ -52,7 +53,7 @@ namespace storm {
                     }
                 }
                 
-                // evaluate observation expressions and assign id
+                // evaluate observation expressions and assign class
                 storm::storage::BitVector evaluation(OBS_EXPR_VALUE_SIZE*num_obs_expressions);
                 for (uint32_t o = 0; o < num_obs_expressions; o++) {
                     evaluation.setFromInt(
@@ -61,22 +62,46 @@ namespace storm {
                         evaluator.asInt(prism.getObservationLabels()[o].getStatePredicateExpression())
                     );
                 }
-                auto result = this->obs_evaluation_to_id.insert(std::make_pair(evaluation,num_obs_ids));
+                auto result = this->obs_evaluation_to_class.insert(std::make_pair(evaluation,this->num_obs_classes));
                 if(not result.second) {
                     // existing evaluation
-                    this->state_to_obs_id[state] = result.first->second;
+                    this->state_to_obs_class[state] = result.first->second;
                 } else {
                     // new evaluation
-                    this->state_to_obs_id[state] = num_obs_ids;
-                    this->id_to_obs_evaluation.push_back(evaluation);
-                    this->num_obs_ids++;
+                    this->state_to_obs_class[state] = this->num_obs_classes;
+                    this->obs_class_to_evaluation.push_back(evaluation);
+                    this->num_obs_classes++;
                 }
             }
         }
 
         template<typename ValueType>
-        uint64_t ObservationEvaluator<ValueType>::observationIdValue(uint32_t obs_id, uint32_t obs_expr) {
-            return this->id_to_obs_evaluation[obs_id].getAsInt(OBS_EXPR_VALUE_SIZE*obs_expr,OBS_EXPR_VALUE_SIZE);
+        uint64_t ObservationEvaluator<ValueType>::observationClassValue(uint32_t obs_class, uint32_t obs_expr) {
+            return this->obs_class_to_evaluation[obs_class].getAsInt(OBS_EXPR_VALUE_SIZE*obs_expr,OBS_EXPR_VALUE_SIZE);
+        }
+
+        
+        template<typename ValueType>
+        std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> ObservationEvaluator<ValueType>::buildSubPomdp(
+            storm::models::sparse::Mdp<ValueType> const& sub_mdp,
+            std::vector<uint32_t> state_sub_to_full
+        ) {
+
+            storm::storage::sparse::ModelComponents<ValueType> components;
+            components.transitionMatrix = sub_mdp.getTransitionMatrix();
+            components.stateLabeling = sub_mdp.getStateLabeling();
+            components.rewardModels = sub_mdp.getRewardModels();
+            components.choiceLabeling = sub_mdp.getChoiceLabeling();;
+            
+            std::vector<uint32_t> observability_classes(sub_mdp.getNumberOfStates());
+            for(uint32_t state = 0; state < sub_mdp.getNumberOfStates(); state++) {
+                observability_classes[state] = this->state_to_obs_class[state_sub_to_full[state]];
+            }
+            components.observabilityClasses = observability_classes;
+
+            auto pomdp = std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components));
+            STORM_LOG_THROW(pomdp->isCanonic(), storm::exceptions::InvalidModelException, "POMDP must be canonic");
+            return pomdp;
         }
 
     
