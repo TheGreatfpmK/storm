@@ -3,6 +3,7 @@
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidModelException.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
+#include <storm-pomdp/transformer/MakePOMDPCanonic.h>
 
 #include <map>
 
@@ -99,9 +100,9 @@ namespace storm {
             }
             components.observabilityClasses = observability_classes;
 
-            auto pomdp = std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components));
-            STORM_LOG_THROW(pomdp->isCanonic(), storm::exceptions::InvalidModelException, "POMDP must be canonic");
-            return pomdp;
+            auto pomdp = storm::models::sparse::Pomdp<ValueType>(std::move(components));
+            auto pomdp_canonic = storm::transformer::MakePOMDPCanonic<ValueType>(pomdp).transform();
+            return pomdp_canonic;
         }
 
     
