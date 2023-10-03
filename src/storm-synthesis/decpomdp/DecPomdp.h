@@ -81,6 +81,11 @@ namespace storm {
 
             void applyDiscountFactorTransformation();
 
+            /** Label for the state that simulates initial distribution. */
+            std::string init_label = "__init__";
+            /** Label for the states in the initial distribution. */
+            std::string no_obs_label = "__no_obs__";
+
             /** Whether discounting transformation took place. */
             bool discounted = false;
             /** Index of the sink state. */

@@ -152,11 +152,11 @@ namespace storm {
             }
 
             // create initial observation for the (unique) initial state
-            uint_fast64_t init_joint_observation = this->freshJointObservation("init");
+            uint_fast64_t init_joint_observation = this->freshJointObservation(this->init_label);
             // create action that corresponds to the execution of the initial distribution
-            uint_fast64_t init_joint_action = this->freshJointAction("init");
+            uint_fast64_t init_joint_action = this->freshJointAction(this->init_label);
             // create empty observation for states in the initial distribution
-            uint_fast64_t empty_joint_observation = this->freshJointObservation("");
+            uint_fast64_t empty_joint_observation = this->freshJointObservation(this->no_obs_label);
 
             // collect initial distribution
             std::vector<MadpRow> initial_distribution_row_group(1);
@@ -239,7 +239,7 @@ namespace storm {
 
             storm::storage::BitVector init_flags(this->num_states(), false);
             init_flags.set(this->initial_state);
-            labeling.addLabel("init", std::move(init_flags));
+            labeling.addLabel(this->init_label, std::move(init_flags));
 
             if(this->discounted) {
                 storm::storage::BitVector discount_sink_flags(this->num_states(), false);
