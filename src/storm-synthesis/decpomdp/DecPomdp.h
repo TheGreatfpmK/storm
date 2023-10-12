@@ -82,7 +82,7 @@ namespace storm {
             void applyDiscountFactorTransformation();
 
             /** Label for the state that simulates initial distribution. */
-            std::string init_label = "__init__";
+            std::string init_label = "init";
             /** Label for the states in the initial distribution. */
             std::string no_obs_label = "__no_obs__";
 
