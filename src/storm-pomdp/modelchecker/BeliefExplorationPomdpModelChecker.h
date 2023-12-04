@@ -187,6 +187,12 @@ class BeliefExplorationPomdpModelChecker {
     std::shared_ptr<ExplorerType> getInteractiveBeliefExplorer();
 
     /**
+     * Get a pointer to the belief explorer used in the unfolding
+     * @return pointer to the belief explorer
+     */
+    std::shared_ptr<ExplorerType> getBeliefExplorer();
+
+    /**
      * Get the current status of the interactive unfolding
      * @return the interactive unfolding
      */
@@ -361,6 +367,7 @@ class BeliefExplorationPomdpModelChecker {
     storm::pomdp::modelchecker::POMDPValueBounds<ValueType> pomdpValueBounds;
 
     std::shared_ptr<ExplorerType> interactiveUnderApproximationExplorer;
+    std::shared_ptr<ExplorerType> underApproximationExplorer;
 
     Status unfoldingStatus;
     UnfoldingControl unfoldingControl;
