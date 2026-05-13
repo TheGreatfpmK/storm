@@ -326,8 +326,8 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
         if (initialComponentStates.get(state)) {
             for (auto choiceIndex : transitionMatrix.getRowGroupIndices(state)) {
                 auto row = transitionMatrix.getRow(choiceIndex);
-                bool const staysInInitialComponent = std::all_of(
-                    row.begin(), row.end(), [&initialComponentStates](auto const& entry) { return initialComponentStates.get(entry.getColumn()); });
+                bool const staysInInitialComponent =
++                    std::all_of(row.begin(), row.end(), [&initialComponentStates](auto const& entry) { return initialComponentStates.get(entry.getColumn()); });
                 if (staysInInitialComponent) {
                     allowedInitialComponentChoices.set(choiceIndex, true);
                 }
