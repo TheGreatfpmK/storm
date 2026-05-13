@@ -318,84 +318,19 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
     storm::utility::graph::computeSchedulerProb1E(maybeNonICStatesWithoutChoice, transitionMatrix, backwardTransitions, maybeStates, maybeStatesWithChoice,
                                                   scheduler, ecStayChoices);
 
-    // collect all choices from the initial component states and the choices that were selected by the scheduler so far
-    auto const condOrTargetStates = normalForm.conditionStates | normalForm.targetStates;
+    // collect all choices from the initial component states that stay within the initial component
     auto const& rowGroups = transitionMatrix.getRowGroupIndices();
-    storm::storage::BitVector allowedChoices(transitionMatrix.getRowCount(), false);
+    storm::storage::BitVector allowedInitialComponentChoices(transitionMatrix.getRowCount(), false);
     auto const rowGroupCount = transitionMatrix.getRowGroupCount();
     for (uint64_t state = 0; state < rowGroupCount; ++state) {
-        if (scheduler.isChoiceSelected(state)) {
-            auto choiceIndex = scheduler.getChoice(state).getDeterministicChoice();
-            allowedChoices.set(rowGroups[state] + choiceIndex, true);
-        } else if (initialComponentStates.get(state) || condOrTargetStates.get(state)) {
-            for (auto choiceIndex : transitionMatrix.getRowGroupIndices(state)) {
-                allowedChoices.set(choiceIndex, true);
-            }
-        }
-    }
-
-    // dfs to find which choices in initial component states lead to condOrTargetStates
-    storm::storage::BitVector choicesThatCanVisitCondOrTargetStates(transitionMatrix.getRowCount(), false);
-    std::stack<uint64_t> toProcess;
-    for (auto state : condOrTargetStates) {
-        toProcess.push(state);
-    }
-    auto visitedStates = condOrTargetStates;
-    while (!toProcess.empty()) {
-        auto currentState = toProcess.top();
-        toProcess.pop();
-        for (auto const& entry : backwardTransitions.getRow(currentState)) {
-            uint64_t const predecessorState = entry.getColumn();
-            for (uint64_t const predecessorChoice : transitionMatrix.getRowGroupIndices(predecessorState)) {
-                if (!allowedChoices.get(predecessorChoice) || choicesThatCanVisitCondOrTargetStates.get(predecessorChoice)) {
-                    continue;  // The choice is either not allowed or has been considered already
-                }
-                if (auto const r = transitionMatrix.getRow(predecessorChoice);
-                    std::none_of(r.begin(), r.end(), [&currentState](auto const& e) { return e.getColumn() == currentState; })) {
-                    continue;  // not an actual predecessor choice
-                }
-                choicesThatCanVisitCondOrTargetStates.set(predecessorChoice, true);
-                if (!visitedStates.get(predecessorState)) {
-                    visitedStates.set(predecessorState, true);
-                    toProcess.push(predecessorState);
-                }
-            }
-        }
-    }
-
-    // we want to disallow taking initial component exits that can lead to a condition or target state, beside the one exit that was chosen
-    storm::storage::BitVector disallowedInitialComponentExits = initialComponentExitRows & choicesThatCanVisitCondOrTargetStates;
-    disallowedInitialComponentExits.set(chosenInitialComponentExit, false);
-    storm::storage::BitVector choicesAllowedForInitialComponent = allowedChoices & ~disallowedInitialComponentExits;
-
-    storm::storage::BitVector goodInitialComponentStates = initialComponentStates;
-    bool progress = false;
-    for (auto state : initialComponentExitStates) {
-        auto const groupStart = transitionMatrix.getRowGroupIndices()[state];
-        auto const groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
-        bool const allChoicesAreDisallowed = disallowedInitialComponentExits.getNextUnsetIndex(groupStart) >= groupEnd;
-        if (allChoicesAreDisallowed) {
-            goodInitialComponentStates.set(state, false);
-            progress = true;
-        }
-    }
-    while (progress) {
-        progress = false;
-        for (auto state : goodInitialComponentStates) {
-            bool allChoicesAreDisallowed = true;
+        if (initialComponentStates.get(state)) {
             for (auto choiceIndex : transitionMatrix.getRowGroupIndices(state)) {
                 auto row = transitionMatrix.getRow(choiceIndex);
-                bool const hasBadSuccessor = std::any_of(
-                    row.begin(), row.end(), [&goodInitialComponentStates](auto const& entry) { return !goodInitialComponentStates.get(entry.getColumn()); });
-                if (hasBadSuccessor) {
-                    choicesAllowedForInitialComponent.set(choiceIndex, false);
-                } else {
-                    allChoicesAreDisallowed = false;
+                bool const staysInInitialComponent = std::all_of(
+                    row.begin(), row.end(), [&initialComponentStates](auto const& entry) { return initialComponentStates.get(entry.getColumn()); });
+                if (staysInInitialComponent) {
+                    allowedInitialComponentChoices.set(choiceIndex, true);
                 }
-            }
-            if (allChoicesAreDisallowed) {
-                goodInitialComponentStates.set(state, false);
-                progress = true;
             }
         }
     }
@@ -404,14 +339,14 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
     exitStateBitvector.set(chosenInitialComponentExitState, true);
 
     storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, initialComponentStates, exitStateBitvector, scheduler,
-                                                         choicesAllowedForInitialComponent);
+                                                         allowedInitialComponentChoices);
 
     // fill the choices of initial component states that do not have a choice yet
     // these states should not reach the condition or target states under the constructed scheduler
     for (auto state : initialComponentStates) {
         if (!scheduler.isChoiceSelected(state)) {
             for (auto choiceIndex : transitionMatrix.getRowGroupIndices(state)) {
-                if (choicesAllowedForInitialComponent.get(choiceIndex)) {
+                if (allowedInitialComponentChoices.get(choiceIndex)) {
                     scheduler.setChoice(choiceIndex - rowGroups[state], state);
                     break;
                 }
